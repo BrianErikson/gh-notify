@@ -1,0 +1,6 @@
+[package]
+name = "gh-notify"
+version = "0.1.0"
+authors = ["brianerikson <briankerikson@gmail.com>"]
+
+[dependencies]
