@@ -4,3 +4,8 @@ version = "0.1.0"
 authors = ["brianerikson <briankerikson@gmail.com>"]
 
 [dependencies]
+rusthub = { git = "https://github.com/puritylake/rusthub" }
+notify-rust = "3.1.1"
+rustc-serialize = "0.3.19"
+log = "0.3.6"
+env_logger = "0.3.3"
