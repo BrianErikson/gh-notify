@@ -4,11 +4,10 @@ use std::fs::{DirBuilder, OpenOptions, File};
 use std::path::PathBuf;
 use std::path::Path;
 use std::process::Command;
-use std::thread;
-use std::time::Duration;
 use rustc_serialize::{Decoder, Decodable, Encoder, Encodable};
 use rustc_serialize::json;
 use rusthub::oauth_web;
+use notify_rust::{Notification, NotificationHint, NotificationUrgency};
 
 #[derive(Debug)]
 struct GhNotifyConfig {
@@ -74,7 +73,34 @@ fn open_config() -> File {
     }
 }
 
-fn build_new_token() -> String {
+fn request_browser_open(url: String, timeout: i32) {
+    Notification::new()
+        .appname("gh-notify")
+        .summary("Authorize gh-notify for GitHub Access")
+        .body("gh-notify needs authorization in order to receive notifications. Click to open an authorization window.")
+        .action("default", "Open Browser")    // IDENTIFIER, LABEL
+        .action("clicked", "Open Browser") // IDENTIFIER, LABEL
+        .hint(NotificationHint::Urgency(NotificationUrgency::Normal))
+        .timeout(timeout)
+        .show()
+        .unwrap()
+        .wait_for_action({|action|
+            match action {
+                "default" | "clicked" => {
+                    debug!("Opening browser to authentication link.");
+                    let _ = Command::new("sh")
+                        .arg("-c")
+                        .arg(format!("xdg-open '{}'", url))
+                        .output()
+                        .expect("Failed to open web browser instance.");
+                },
+                "__closed" => error!("the notification was closed before authentication could occur"),
+                _ => ()
+            }
+        });
+}
+
+fn build_new_token(timeout: i32) -> String {
     info!("Building new token...");
     let client_id = "f912851b98b2884f77de".to_string();
     let scope = vec!("notifications".to_string());
@@ -83,19 +109,10 @@ fn build_new_token() -> String {
     debug!("Opening secret...");
     File::open(&Path::new("secret")).unwrap().read_to_string(&mut secret).unwrap();
 
-    let t_client_id = client_id.clone();
-    thread::spawn(move || {
-        thread::sleep(Duration::new(0, 1000000)); // 1ms delay
-        debug!("Opening browser to authentication link.");
-        let _ = Command::new("sh")
-            .arg("-c")
-            .arg(format!("xdg-open '{}'", oauth_web::create_authentication_link(t_client_id, scope, true)))
-            .output()
-            .expect("Failed to open web browser instance.");
-    });
+    request_browser_open(oauth_web::create_authentication_link(client_id.clone(), scope, true), timeout);
 
-    debug!("Requesting token...");
-    let token = oauth_web::capture_authorization(client_id, secret, 120)
+    debug!("Capturing authorization from GitHub redirect. Blocking...");
+    let token = oauth_web::capture_authorization(client_id, secret, timeout as u64)
         .expect("ERROR: Something went wrong when requesting token.");
 
     write_config(&GhNotifyConfig {token: token.clone()});
@@ -116,7 +133,7 @@ fn write_config(config: &GhNotifyConfig) {
     debug!("Configuration saved.");
 }
 
-pub fn retrieve_token() -> String {
+pub fn retrieve_token(timeout: i32) -> String {
     info!("Retrieving token...");
     let mut config = open_config();
     let mut json_str = String::new();
@@ -125,10 +142,10 @@ pub fn retrieve_token() -> String {
             debug!("Config file read sucessfully. Parsing...");
             let token: String = match json::decode::<GhNotifyConfig>(&json_str) {
                 Ok(config_struct) => config_struct.token,
-                Err(_) => build_new_token()
+                Err(_) => build_new_token(timeout)
             };
             token
         },
-        Err(_) => build_new_token()
+        Err(_) => build_new_token(timeout)
     }
 }
