@@ -3,6 +3,9 @@ use std::env;
 use std::fs::{DirBuilder, OpenOptions, File};
 use std::path::PathBuf;
 use std::path::Path;
+use std::process::Command;
+use std::thread;
+use std::time::Duration;
 use rustc_serialize::{Decoder, Decodable, Encoder, Encodable};
 use rustc_serialize::json;
 use rusthub::oauth_web;
@@ -73,17 +76,27 @@ fn open_config() -> File {
 
 fn build_new_token() -> String {
     info!("Building new token...");
+    let client_id = "f912851b98b2884f77de".to_string();
+    let scope = vec!("notifications".to_string());
     let mut secret = String::new();
+
     debug!("Opening secret...");
     File::open(&Path::new("secret")).unwrap().read_to_string(&mut secret).unwrap();
+
+    let t_client_id = client_id.clone();
+    thread::spawn(move || {
+        thread::sleep(Duration::new(0, 1000000)); // 1ms delay
+        debug!("Opening browser to authentication link.");
+        let _ = Command::new("sh")
+            .arg("-c")
+            .arg(format!("xdg-open '{}'", oauth_web::create_authentication_link(t_client_id, scope, true)))
+            .output()
+            .expect("Failed to open web browser instance.");
+    });
+
     debug!("Requesting token...");
-    let token = oauth_web::create_authorization(
-        "f912851b98b2884f77de".to_string(),
-        secret,
-        vec!("notifications".to_string()),
-        true,
-        120
-    ).expect("ERROR: Something went wrong when requesting token.");
+    let token = oauth_web::capture_authorization(client_id, secret, 120)
+        .expect("ERROR: Something went wrong when requesting token.");
 
     write_config(&GhNotifyConfig {token: token.clone()});
     token
