@@ -107,7 +107,10 @@ fn build_new_token(timeout: i32) -> String {
     let mut secret = String::new();
 
     debug!("Opening secret...");
-    File::open(&Path::new("secret")).unwrap().read_to_string(&mut secret).unwrap();
+    File::open(&Path::new("secret"))
+        .expect("Could not open secret")
+        .read_to_string(&mut secret)
+        .unwrap();
 
     request_browser_open(oauth_web::create_authentication_link(client_id.clone(), scope, true), timeout);
 
