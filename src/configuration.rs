@@ -3,11 +3,10 @@ use std::env;
 use std::fs::{DirBuilder, OpenOptions, File};
 use std::path::PathBuf;
 use std::path::Path;
-use std::process::Command;
 use rustc_serialize::{Decoder, Decodable, Encoder, Encodable};
 use rustc_serialize::json;
 use rusthub::oauth_web;
-use notify_rust::{Notification, NotificationHint, NotificationUrgency};
+use notify;
 
 #[derive(Debug)]
 struct GhNotifyConfig {
@@ -73,33 +72,6 @@ fn open_config() -> File {
     }
 }
 
-fn request_browser_open(url: String, timeout: i32) {
-    Notification::new()
-        .appname("gh-notify")
-        .summary("Authorize gh-notify for GitHub Access")
-        .body("gh-notify needs authorization in order to receive notifications. Click to open an authorization window.")
-        .action("default", "Open Browser")    // IDENTIFIER, LABEL
-        .action("clicked", "Open Browser") // IDENTIFIER, LABEL
-        .hint(NotificationHint::Urgency(NotificationUrgency::Normal))
-        .timeout(timeout)
-        .show()
-        .unwrap()
-        .wait_for_action({|action|
-            match action {
-                "default" | "clicked" => {
-                    debug!("Opening browser to authentication link.");
-                    let _ = Command::new("sh")
-                        .arg("-c")
-                        .arg(format!("xdg-open '{}'", url))
-                        .output()
-                        .expect("Failed to open web browser instance.");
-                },
-                "__closed" => error!("the notification was closed before authentication could occur"),
-                _ => ()
-            }
-        });
-}
-
 fn build_new_token(timeout: i32) -> String {
     info!("Building new token...");
     let client_id = "f912851b98b2884f77de".to_string();
@@ -112,7 +84,22 @@ fn build_new_token(timeout: i32) -> String {
         .read_to_string(&mut secret)
         .unwrap();
 
-    request_browser_open(oauth_web::create_authentication_link(client_id.clone(), scope, true), timeout);
+    let url = oauth_web::create_authentication_link(client_id.clone(), scope, true);
+    notify::notify_action(
+        "Authorize gh-notify for GitHub Access",
+        "gh-notify needs authorization in order to receive notifications. Click to open an authorization window.",
+        "Open Browser",
+        timeout,
+        {|action|
+            match action {
+                "default" | "clicked" => {
+                    notify::open_link(&url);
+                },
+                "__closed" => error!("the notification was closed before authentication could occur"),
+                _ => ()
+            }
+        }
+    );
 
     debug!("Capturing authorization from GitHub redirect. Blocking...");
     let token = oauth_web::capture_authorization(client_id, secret, timeout as u64)
