@@ -10,7 +10,7 @@ pub fn show_notification(notification: &notifications::Notification) {
         &notification.reason,
         "Open in Browser",
         120,
-        {|action|
+        |action| {
             match action {
                 "default" | "clicked" => {
                     open_link(&notification.url);
@@ -34,10 +34,10 @@ pub fn open_link(url: &str) {
 pub fn notify_action<F>(summary: &str, body: &str, button_text: &str, timeout: i32, action: F) where F:FnOnce(&str) {
     Notification::new()
         .appname(APP_NAME)
-        .summary(summary)
-        .body(body)
-        .action("default", button_text)    // IDENTIFIER, LABEL
-        .action("clicked", button_text) // IDENTIFIER, LABEL
+        .summary(&summary)
+        .body(&body)
+        .action("default", &button_text)    // IDENTIFIER, LABEL
+        .action("clicked", &button_text) // IDENTIFIER, LABEL
         .hint(NotificationHint::Urgency(NotificationUrgency::Normal))
         .timeout(timeout)
         .show()

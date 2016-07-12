@@ -90,7 +90,7 @@ fn build_new_token(timeout: i32) -> String {
         "gh-notify needs authorization in order to receive notifications. Click to open an authorization window.",
         "Open Browser",
         timeout,
-        {|action|
+        |action| {
             match action {
                 "default" | "clicked" => {
                     notify::open_link(&url);
