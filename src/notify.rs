@@ -6,9 +6,10 @@ use std::thread;
 const APP_NAME: &'static str = "gh-notify";
 
 pub fn show_notification(notification: &notifications::Notification) {
-    let subject = format!("{} - {}", notification.repository.name, notification.subject.subject_type);
+    let subject = format!("{} - {}", notification.subject.subject_type, notification.repository.name);
     let body = notification.subject.title.clone();
-    let url = notification.repository.html_url.clone();
+    let url = notification.subject.url.clone();
+    let url = url.replace("api.", "").replace("repos/", "").replace("/pulls/", "/pull/");
     thread::spawn(move || {
         notify_action(
             &subject,
