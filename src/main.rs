@@ -1,10 +1,13 @@
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 extern crate rusthub;
 extern crate notify_rust;
 extern crate rustc_serialize;
 extern crate env_logger;
+
 mod io;
 mod notify;
+
 use rusthub::notifications;
 use rusthub::notifications::{NotificationResponse, Notifications};
 use std::thread;
@@ -20,11 +23,11 @@ fn parse_response(response: &NotificationResponse) -> Notifications {
                 Ok(notifications) => notifications,
                 Err(err) => {
                     error!("While retrieving notifications: {}", err);
-                    Notifications {list: vec!()}
+                    Notifications { list: vec!() }
                 }
             }
         },
-        None => Notifications {list: vec!()}
+        None => Notifications { list: vec!() }
     }
 }
 
@@ -41,7 +44,7 @@ fn filter_unseen(notifications: &Notifications) -> Notifications {
         }
     };
 
-    Notifications {list: list}
+    Notifications { list: list }
 }
 
 fn main() {

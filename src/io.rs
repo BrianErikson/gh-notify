@@ -17,7 +17,7 @@ struct GhNotifyConfig {
 impl Decodable for GhNotifyConfig {
     fn decode<D: Decoder>(d: &mut D) -> Result<GhNotifyConfig, D::Error> {
         d.read_struct("root", 1, |d| {
-            Ok(GhNotifyConfig{
+            Ok(GhNotifyConfig {
                 token: try!(d.read_struct_field("token", 0, |d| Decodable::decode(d)))
             })
         })
@@ -26,7 +26,7 @@ impl Decodable for GhNotifyConfig {
 
 impl Encodable for GhNotifyConfig {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        s.emit_struct("root",  1, |s| {
+        s.emit_struct("root", 1, |s| {
             try!(s.emit_struct_field("token", 0, |s| {
                 s.emit_str(&self.token)
             }));
@@ -61,8 +61,8 @@ fn open_file(path: &PathBuf) -> Result<File, String> {
             let mut dir = env::home_dir().expect("Impossible to get your home dir!");
             dir.push(".gh-notify");
             try!(DirBuilder::new()
-                .recursive(true)
-                .create(&dir).map_err(|err| err.to_string()));
+                     .recursive(true)
+                     .create(&dir).map_err(|err| err.to_string()));
 
             OpenOptions::new()
                 .read(true)
@@ -86,8 +86,8 @@ fn build_new_token(timeout: i32) -> Result<String, String> {
 
     debug!("Opening secret...");
     try!(File::open(&Path::new("secret"))
-        .expect("Could not open secret")
-        .read_to_string(&mut secret).map_err(|err| err.to_string()));
+             .expect("Could not open secret")
+             .read_to_string(&mut secret).map_err(|err| err.to_string()));
 
     let url = oauth_web::create_authentication_link(client_id.clone(), scope, true);
     notify::notify_action(
@@ -112,18 +112,18 @@ fn build_new_token(timeout: i32) -> Result<String, String> {
         None => Err("Authorization capture either timed out or something went wrong...")
     });
 
-    try!(write_config(&GhNotifyConfig {token: token.clone()}));
+    try!(write_config(&GhNotifyConfig { token: token.clone() }));
     Ok(token)
 }
 
 fn write_config(config: &GhNotifyConfig) -> Result<(), String> {
     info!("Writing configuration to disk...");
     let mut file = try!(OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .create(true)
-        .open(&get_config_path())
-        .map_err(|err| err.to_string()));
+                            .write(true)
+                            .truncate(true)
+                            .create(true)
+                            .open(&get_config_path())
+                            .map_err(|err| err.to_string()));
 
     try!(file.write(json::encode(config).unwrap().as_bytes()).map_err(|err| err.to_string()));
     try!(file.flush().map_err(|err| err.to_string()));

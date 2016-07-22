@@ -38,7 +38,7 @@ pub fn open_link(url: &str) {
         .expect("Failed to open web browser instance.");
 }
 
-pub fn notify_action<F>(summary: &str, body: &str, button_text: &str, timeout: i32, action: F) where F:FnOnce(&str) {
+pub fn notify_action<F>(summary: &str, body: &str, button_text: &str, timeout: i32, action: F) where F: FnOnce(&str) {
     Notification::new()
         .appname(APP_NAME)
         .summary(&summary)
