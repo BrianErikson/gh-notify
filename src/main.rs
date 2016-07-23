@@ -56,6 +56,8 @@ fn main() {
         io::write_notifications(&response.notifications)
             .unwrap_or_else(|err| error!("While writing notifications: {}", err));
 
+        debug!("\nPoll Interval: {}\nRate Limit: {}\nRate Limit Remaining: {}",
+               response.poll_interval, response.rate_limit, response.rate_limit_remaining);
         // Sleep for requested time by GitHub
         let sleep_time: u64 = response.poll_interval as u64;
         thread::sleep(Duration::new(sleep_time, 0));
