@@ -25,7 +25,7 @@ pub fn show_notification(notification: &notifications::Notification) {
                     _ => ()
                 }
             }
-        );
+        ).unwrap_or_else(|err| error!("While showing notification: {}", err));
     });
 }
 
@@ -38,16 +38,17 @@ pub fn open_link(url: &str) {
         .expect("Failed to open web browser instance.");
 }
 
-pub fn notify_action<F>(summary: &str, body: &str, button_text: &str, timeout: i32, action: F) where F: FnOnce(&str) {
-    Notification::new()
-        .appname(APP_NAME)
-        .summary(&summary)
-        .body(&body)
-        .action("default", &button_text)    // IDENTIFIER, LABEL
-        .action("clicked", &button_text) // IDENTIFIER, LABEL
-        .hint(NotificationHint::Urgency(NotificationUrgency::Normal))
-        .timeout(timeout)
-        .show()
-        .unwrap()
-        .wait_for_action(action);
+pub fn notify_action<F>(summary: &str, body: &str, button_text: &str, timeout: i32, action: F) -> Result<(), String> where F: FnOnce(&str) {
+    let handle = try!(Notification::new()
+                          .appname(APP_NAME)
+                          .summary(&summary)
+                          .body(&body)
+                          .action("default", &button_text)    // IDENTIFIER, LABEL
+                          .action("clicked", &button_text) // IDENTIFIER, LABEL
+                          .hint(NotificationHint::Urgency(NotificationUrgency::Normal))
+                          .timeout(timeout)
+                          .show().map_err(|err| err.to_string()));
+
+    handle.wait_for_action(action);
+    Ok(())
 }

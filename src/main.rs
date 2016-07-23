@@ -14,22 +14,6 @@ use std::thread;
 use std::time::Duration;
 
 const TIMEOUT: i32 = 120;
-const DEFAULT_POLL_INTERVAL: usize = 60; // In seconds
-
-fn parse_response(response: &NotificationResponse) -> Notifications {
-    match response.notifications.clone() {
-        Some(result) => {
-            match result {
-                Ok(notifications) => notifications,
-                Err(err) => {
-                    error!("While retrieving notifications: {}", err);
-                    Notifications { list: vec!() }
-                }
-            }
-        },
-        None => Notifications { list: vec!() }
-    }
-}
 
 fn filter_unseen(notifications: &Notifications) -> Notifications {
     let list = match io::get_saved_notifications() {
@@ -58,10 +42,9 @@ fn main() {
     loop {
         // Get notifications
         let response: NotificationResponse = notifications::get_notifications_oauth(&token).unwrap();
-        let notifications: Notifications = parse_response(&response);
 
-        let unseen = filter_unseen(&notifications);
-        debug!("Unseen Notifications: {} out of {}", unseen.list.len(), notifications.list.len());
+        let unseen = filter_unseen(&response.notifications);
+        debug!("Unseen Notifications: {} out of {}", unseen.list.len(), response.notifications.list.len());
 
         // Display notifications
         for notification in &unseen.list {
@@ -70,11 +53,11 @@ fn main() {
         }
 
         // Cache Previous Notifications
-        io::write_notifications(&notifications)
+        io::write_notifications(&response.notifications)
             .unwrap_or_else(|err| error!("While writing notifications: {}", err));
 
         // Sleep for requested time by GitHub
-        let sleep_time: u64 = response.poll_interval.unwrap_or(DEFAULT_POLL_INTERVAL) as u64;
+        let sleep_time: u64 = response.poll_interval as u64;
         thread::sleep(Duration::new(sleep_time, 0));
     }
 }

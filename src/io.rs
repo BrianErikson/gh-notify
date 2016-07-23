@@ -90,7 +90,7 @@ fn build_new_token(timeout: i32) -> Result<String, String> {
              .read_to_string(&mut secret).map_err(|err| err.to_string()));
 
     let url = oauth_web::create_authentication_link(client_id.clone(), scope, true);
-    notify::notify_action(
+    try!(notify::notify_action(
         "Authorize gh-notify for GitHub Access",
         "gh-notify needs authorization in order to receive notifications. Click to open an authorization window.",
         "Open Browser",
@@ -104,7 +104,7 @@ fn build_new_token(timeout: i32) -> Result<String, String> {
                 _ => ()
             }
         }
-    );
+    ));
 
     debug!("Capturing authorization from GitHub redirect. Blocking...");
     let token = try!(match oauth_web::capture_authorization(client_id, secret, timeout as u64) {
@@ -125,7 +125,8 @@ fn write_config(config: &GhNotifyConfig) -> Result<(), String> {
                             .open(&get_config_path())
                             .map_err(|err| err.to_string()));
 
-    try!(file.write(json::encode(config).unwrap().as_bytes()).map_err(|err| err.to_string()));
+    let encode: String = try!(json::encode(config).map_err(|err| err.to_string()));
+    try!(file.write(encode.as_bytes()).map_err(|err| err.to_string()));
     try!(file.flush().map_err(|err| err.to_string()));
     debug!("Configuration saved.");
     Ok(())
