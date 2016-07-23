@@ -2,6 +2,7 @@ use notify_rust::{Notification, NotificationHint, NotificationUrgency};
 use rusthub::notifications;
 use std::process::Command;
 use std::thread;
+use std::path::Path;
 
 const APP_NAME: &'static str = "gh-notify";
 
@@ -39,9 +40,15 @@ pub fn open_link(url: &str) {
 }
 
 pub fn notify_action<F>(summary: &str, body: &str, button_text: &str, timeout: i32, action: F) -> Result<(), String> where F: FnOnce(&str) {
+    let icon = match Path::new("./icon.png").canonicalize() {
+        Ok(path) => path.to_string_lossy().into_owned(),
+        Err(_) => "clock".to_string()
+    };
+
     let handle = try!(Notification::new()
                           .appname(APP_NAME)
                           .summary(&summary)
+                          .icon(&icon)
                           .body(&body)
                           .action("default", &button_text)    // IDENTIFIER, LABEL
                           .action("clicked", &button_text) // IDENTIFIER, LABEL

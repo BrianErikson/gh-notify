@@ -2,9 +2,16 @@
 name = "gh-notify"
 version = "0.1.0"
 authors = ["brianerikson <briankerikson@gmail.com>"]
+description = "Github Notifier built with Rust"
+homepage = "https://github.com/BrianErikson/gh-notify"
+repository = "https://github.com/BrianErikson/gh-notify"
+readme = "README.md"
+keywords = [ "github" ]
+license = "MIT"
+build = "build.rs"
 
 [dependencies]
-rusthub = { git = "https://github.com/puritylake/rusthub" }
+rusthub = { git = "https://github.com/puritylake/rusthub.git", rev = "c91c43e89bd68d84de782e3ceb5d9f6086d1a030" }
 notify-rust = "3.1.1"
 rustc-serialize = "0.3.19"
 log = "0.3.6"
