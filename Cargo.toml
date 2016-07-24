@@ -16,3 +16,7 @@ notify-rust = "3.1.1"
 rustc-serialize = "0.3.19"
 log = "0.3.6"
 env_logger = "0.3.3"
+
+[dependencies.gtk]
+version = "0.1.0"
+features = ["v3_10"]

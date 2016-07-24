@@ -4,14 +4,17 @@ extern crate rusthub;
 extern crate notify_rust;
 extern crate rustc_serialize;
 extern crate env_logger;
+extern crate gtk;
 
 mod io;
 mod notify;
 
-use rusthub::notifications;
-use rusthub::notifications::{NotificationResponse, Notifications};
 use std::thread;
 use std::time::Duration;
+use std::path::Path;
+use rusthub::notifications;
+use rusthub::notifications::{NotificationResponse, Notifications};
+use gtk::StatusIcon;
 
 const TIMEOUT: i32 = 120;
 
@@ -37,6 +40,25 @@ fn main() {
     let token: String = io::retrieve_token(TIMEOUT).unwrap();
     debug!("Token: {}", &token);
     // TODO: Check if this token is stale before using it in the main loop
+
+    gtk::init().unwrap();
+    let status_icon: StatusIcon;
+    match Path::new("./icon.png").canonicalize() {
+        Ok(path) => {
+            let icon_path = path.to_string_lossy().into_owned();
+            debug!("Using real icon in system tray");
+            status_icon = StatusIcon::new_from_file(icon_path);
+        },
+        Err(_) => {
+            debug!("Using fallback icon in system tray");
+            status_icon = StatusIcon::new_from_icon_name("clock");
+        }
+    };
+    status_icon.set_name("gh-notify");
+    status_icon.set_title("gh-notify");
+    status_icon.connect_popup_menu(|_, _, _| {
+
+    });
 
     // MAIN LOOP
     loop {
