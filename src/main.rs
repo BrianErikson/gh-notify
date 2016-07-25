@@ -11,10 +11,11 @@ mod notify;
 
 use std::thread;
 use std::time::Duration;
+use std::fs::{File};
 use std::path::Path;
 use rusthub::notifications;
 use rusthub::notifications::{NotificationResponse, Notifications};
-use gtk::StatusIcon;
+use gtk::{StatusIcon, Builder, Menu};
 
 const TIMEOUT: i32 = 120;
 
@@ -41,12 +42,17 @@ fn main() {
     debug!("Token: {}", &token);
     // TODO: Check if this token is stale before using it in the main loop
 
+    // Initialize popup menu
+    let builder = Builder::new_from_file(&Path::new("popup.glade"));
+    let menu: Menu = builder.get_object::<Menu>("menu").unwrap();
+    //
+    // Publish status icon for system tray
     gtk::init().unwrap();
     let status_icon: StatusIcon;
     match Path::new("./icon.png").canonicalize() {
         Ok(path) => {
             let icon_path = path.to_string_lossy().into_owned();
-            debug!("Using real icon in system tray");
+            debug!("Using real icon in system tray: {}", icon_path);
             status_icon = StatusIcon::new_from_file(icon_path);
         },
         Err(_) => {
@@ -56,9 +62,12 @@ fn main() {
     };
     status_icon.set_name("gh-notify");
     status_icon.set_title("gh-notify");
+    status_icon.set_tooltip_text("gh-notify");
     status_icon.connect_popup_menu(|_, _, _| {
-
+        //menu.position_menu(0, 0, &status_icon);
+        menu.popup(None, None, false, 0, 0);
     });
+    //
 
     // MAIN LOOP
     loop {
